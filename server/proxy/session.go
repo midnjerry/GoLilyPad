@@ -219,8 +219,10 @@ func (this *Session) DisconnectJson(json string) {
 }
 
 func (this *Session) HandlePacket(packet packet.Packet) (err error) {
-	switch this.state {
+	fmt.Println(this.state," Packet: ",packet)
+  switch this.state {
 	case STATE_DISCONNECTED:
+    fmt.Println("STATE_DISCONNECTED")
 		if handshakePacket, ok := packet.(*minecraft.PacketServerHandshake); ok {
 			this.protocolVersion = handshakePacket.ProtocolVersion
 			this.rawServerAddress = handshakePacket.ServerAddress
@@ -276,6 +278,7 @@ func (this *Session) HandlePacket(packet packet.Packet) (err error) {
 			return
 		}
 	case STATE_STATUS:
+    fmt.Println("STATE_STATUS")
 		if _, ok := packet.(*minecraft.PacketServerStatusRequest); ok {
 			samplePath := this.server.router.RouteSample(this.serverAddress)
 			sampleTxt, sampleErr := ioutil.ReadFile(samplePath)
@@ -337,6 +340,7 @@ func (this *Session) HandlePacket(packet packet.Packet) (err error) {
 			return
 		}
 	case STATE_STATUS_PING:
+    fmt.Println("STATE_STATUS_PING")
 		if statusPing, ok := packet.(*minecraft.PacketServerStatusPing); ok {
 			err = this.Write(minecraft.NewPacketClientStatusPing(statusPing.Time))
 			if err != nil {
@@ -348,6 +352,7 @@ func (this *Session) HandlePacket(packet packet.Packet) (err error) {
 			return
 		}
 	case STATE_LOGIN:
+    fmt.Println("STATE_LOGIN")
 		if loginStart, ok := packet.(*minecraft.PacketServerLoginStart); ok {
 			this.name = loginStart.Name
 			if len(this.name) > 16 {
@@ -384,6 +389,7 @@ func (this *Session) HandlePacket(packet packet.Packet) (err error) {
 			return
 		}
 	case STATE_LOGIN_ENCRYPT:
+    fmt.Println("STATE_LOGIN_ENCRYPT")
 		if loginEncryptResponse, ok := packet.(*minecraft.PacketServerLoginEncryptResponse); ok {
 			var sharedSecret []byte
 			sharedSecret, err = rsa.DecryptPKCS1v15(cryptoRand.Reader, this.server.privateKey, loginEncryptResponse.SharedSecret)
@@ -417,8 +423,10 @@ func (this *Session) HandlePacket(packet packet.Packet) (err error) {
 			return
 		}
 	case STATE_CONNECTED:
-		if _, ok := packet.(*minecraft.PacketServerClientSettings); ok {
+		if rock, ok := packet.(*minecraft.PacketServerClientSettings); ok {
+    
 			this.clientSettings = packet
+      fmt.Println("STATE_CONNECTED, Settings packet received: ",packet," :",rock)
 		} else if pluginMessage, ok := packet.(*minecraft.PacketServerPluginMessage); ok {
 			if pluginMessage.Channel == "REGISTER" {
 				channelBytesSplit := bytes.Split(pluginMessage.Data[:], []byte{0})
